@@ -40,12 +40,13 @@ def process_paragraph(paragraph):
 
 def process_document(doc_path, output_path):
     doc = Document(doc_path)
-    output_lines = []
+    output_lines = ["<doc>"]
 
     for paragraph in doc.paragraphs:
         processed_text = process_paragraph(paragraph)
         output_lines.append(processed_text)
 
+    output_lines.append("</doc>")
     output_path = output_path.replace('.docx', '.xml')
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(output_lines))
