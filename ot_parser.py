@@ -11,11 +11,11 @@ def process_centered_line(line):
 def process_chapter_line(line):
     match = re.match(r'([\u0700-\u074F]+)\[', line)
     if match:
-        return f"<chapter> {match.group(1)}{line[match.end():]} </chapter>"
+        return f'<chapter no="{match.group(1)}">'
     return line
 
-def process_header_paragraph(paragraph):
-    return f"<header> {paragraph} </header>"
+def process_heading_paragraph(paragraph):
+    return f"<heading> {paragraph} </heading>"
 
 def process_verse_paragraph(paragraph):
     sentences = re.split(r'(\d+)', paragraph)
@@ -33,7 +33,7 @@ def process_paragraph(paragraph):
     elif re.match(r'[\u0700-\u074F]+\[', text):
         return process_chapter_line(text)
     elif not any(char.isdigit() for char in text):
-        return process_header_paragraph(text)
+        return process_heading_paragraph(text)
     elif text[0].isdigit():
         return process_verse_paragraph(text)
     return text
@@ -41,11 +41,25 @@ def process_paragraph(paragraph):
 def process_document(doc_path, output_path):
     doc = Document(doc_path)
     output_lines = ["<doc>"]
+    inside_chapter = False
 
     for paragraph in doc.paragraphs:
         processed_text = process_paragraph(paragraph)
-        output_lines.append(processed_text)
+        if processed_text.startswith('<chapter no='):
+            if inside_chapter:
+                output_lines.append("</chapter>")
+            inside_chapter = True
+            output_lines.append(processed_text)
+        elif processed_text.startswith('<heading>'):
+            if inside_chapter:
+                output_lines.append(processed_text)
+            else:
+                output_lines.append(processed_text)
+        else:
+            output_lines.append(processed_text)
 
+    if inside_chapter:
+        output_lines.append("</chapter>")
     output_lines.append("</doc>")
     output_path = output_path.replace('.docx', '.xml')
     with open(output_path, 'w', encoding='utf-8') as f:
