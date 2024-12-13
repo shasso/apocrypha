@@ -42,6 +42,7 @@ def process_document(doc_path, output_path):
     doc = Document(doc_path)
     output_lines = ["<doc>"]
     inside_chapter = False
+    last_heading = None
 
     for paragraph in doc.paragraphs:
         processed_text = process_paragraph(paragraph)
@@ -49,17 +50,25 @@ def process_document(doc_path, output_path):
             if inside_chapter:
                 output_lines.append("</chapter>")
             inside_chapter = True
+            if last_heading:
+                output_lines.append(last_heading)
+                last_heading = None
             output_lines.append(processed_text)
         elif processed_text.startswith('<heading>'):
             if inside_chapter:
-                output_lines.append(processed_text)
+                last_heading = processed_text
             else:
                 output_lines.append(processed_text)
         else:
+            if last_heading:
+                output_lines.append(last_heading)
+                last_heading = None
             output_lines.append(processed_text)
 
     if inside_chapter:
         output_lines.append("</chapter>")
+    if last_heading:
+        output_lines.append(last_heading)
     output_lines.append("</doc>")
     output_path = output_path.replace('.docx', '.xml')
     with open(output_path, 'w', encoding='utf-8') as f:
